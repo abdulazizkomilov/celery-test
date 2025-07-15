@@ -11,12 +11,19 @@
     pkgs.python311Packages.pip
     pkgs.gnumake
     pkgs.redis
+    pkgs.openssh
+    pkgs.docker
+    pkgs.docker-compose
     # pkgs.nodejs_20
     # pkgs.nodePackages.nodemon
   ];
 
+  services.docker.enable = true;
+
   # Sets environment variables in the workspace
-  env = {};
+  env = {
+    VENV_DIR = "./.venv";
+  };
   idx = {
     # Search for the extensions you want on https://open-vsx.org/ and use "publisher.id"
     extensions = [
@@ -46,6 +53,7 @@
       onCreate = {
         # Example: install JS dependencies from NPM
         # npm-install = "npm install";
+        start-docker = "sudo systemctl start docker";
       };
       # Runs when the workspace is (re)started
       onStart = {
