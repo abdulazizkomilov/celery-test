@@ -1,0 +1,40 @@
+###########################################
+###########################################
+
+celery-default)
+    celery \
+        -A core worker \
+        --loglevel INFO \
+        --queues default \
+        --hostname=default_worker@%h \
+        -P gevent \
+        -c 1000
+
+
+###########################################
+###########################################
+
+celery-sms)
+     celery \
+        -A core worker \
+        --loglevel INFO \
+        --queues sms_queue \
+        --hostname=sms_worker@%h \
+        -P gevent \
+        -c 1000
+
+
+###########################################
+###########################################
+
+flower)
+    celery \
+        -A core \
+        --broker="redis://localhost:6379/0" \
+        flower \
+        --address=0.0.0.0 \
+        --port=5555 \
+        --url_prefix=flower \
+        --loglevel INFO \
+        --basic-auth=login:password \
+        --persistent=True
