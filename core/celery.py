@@ -13,22 +13,6 @@ load_dotenv()
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings')
 
 app = Celery("config")
-
-# logger = logging.getLogger("celery")
-# logging.basicConfig(level=logging.INFO)
-
-
-# @setup_logging.connect
-# def config_loggers(*args, **kwargs):
-#     pass
-# from logging.config import dictConfig  # noqa
-# from django.conf import settings  # noqa
-#
-# dictConfig(settings.LOGGING)
-
-
-# app.config_from_object("django.config:settings")
-# Load task modules from all registered Django marketplace.
 app.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
 
 BROKER_URL = f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}/0"  # noqa
@@ -52,10 +36,6 @@ app.conf.update(
         "priority_steps": list(range(10)),
         "queue_order_strategy": "priority",
     },
-    # task_annotations={"*": {"rate_limit": "10/m"}},
-    # task_default_queue='normal',
-    # task_default_exchange='normal',
-    # task_default_routing_key='normal',
 )
 
 app.conf.task_queues = (
@@ -71,22 +51,6 @@ app.conf.task_routes = {
     },
 }
 
-# app.conf.task_queues = (
-#     Queue('high', Exchange('high'), routing_key='high'),
-#     Queue('normal', Exchange('normal'), routing_key='normal'),
-#     Queue('low', Exchange('low'), routing_key='low'),
-# )
-# app.conf.task_routes = {
-#     # -- HIGH PRIORITY QUEUE -- #
-#     'notification.tasks.{task_name}': {'queue': 'high'},
-#     'notification.tasks.{task_name}': {'queue': 'high'},
-#     # -- LOW PRIORITY QUEUE -- #
-#     'products.tasks.{task_name}': {'queue': 'low'},
-#     'products.tasks.{task_name}': {'queue': 'low'},
-#     'products.tasks.{task_name}': {'queue': 'low'},
-#     'products.tasks.{task_name}': {'queue': 'low'},
-# }
-
 schedule_crontab = {"schedule": crontab(hour="*/2", minute="0")}
 
 if settings.DEBUG or settings.DEVELOPMENT:
@@ -94,7 +58,7 @@ if settings.DEBUG or settings.DEVELOPMENT:
 
 app.conf.beat_schedule = {
     "auto-write-off-by-schedule": {
-        "task": "main_autopay",
+        "task": "auto_task_runner",
         # a job is scheduled to run on the every two hours on production
         **schedule_crontab,
     }

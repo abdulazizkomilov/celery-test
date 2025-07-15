@@ -319,3 +319,8 @@ os
 *.pdf
 
 tst.py
+*.rdb
+flower
+flower.db
+
+sms_responses.json

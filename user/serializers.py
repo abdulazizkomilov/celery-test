@@ -19,7 +19,7 @@ class ManagerCreateSerializer(serializers.ModelSerializer):
             password=password,
             role='manager'
         )
-        # 👉 TemporaryManager modelga yozamiz
+        
         TemporaryManager.objects.create(user=user, raw_password=password)
         return user
 

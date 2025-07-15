@@ -3,6 +3,7 @@ import random
 import json
 import os
 
+from django.db import transaction
 from django.utils import timezone
 from django.db.models import (
     Case,
@@ -20,11 +21,8 @@ from core.celery import (
 @app.task(name="send_message", queue="sms_queue", routing_key="sms.send")
 def send_sms():
     response = random.randint(100000, 999999)
-
-    # Define file path
     output_file = "sms_responses.json"
 
-    # Check if file exists and read existing data
     if os.path.exists(output_file):
         with open(output_file, "r") as f:
             try:
@@ -34,10 +32,8 @@ def send_sms():
     else:
         data = []
 
-    # Append the new response
     data.append({"response": response})
 
-    # Write updated data back to the file
     with open(output_file, "w") as f:
         json.dump(data, f, indent=4)
 
@@ -49,28 +45,36 @@ def task_1(num):
     logging.info("Task 1 Done: %s", num)
 
 
-@app.task(name="print_hello", queue="default", routing_key="task.print_hello")
-def print_hello(_id):
-    logging.info("👋 Hello from custom scheduled task id: %s", _id)
+@app.task(name="process_schedule", queue="default", routing_key="task.process_schedule")
+def process_schedule(_id):
+    logging.info("Scheduled task id: %s", _id)
+
+    try:
+        with transaction.atomic():
+            schedule = Schedule.objects.get(id=_id)
+            schedule.status = True
+            schedule.description = "This is a description: {}".format(_id)
+            schedule.save(update_fields=["status", "description"])
+            logging.info(f"✅ Updated Schedule {_id}")
+    except Schedule.DoesNotExist:
+        logging.error(f"❌ Schedule with id {_id} not found")
+    except Exception as e:
+        logging.error(f"❌ Failed to update status for Schedule {_id}: {e}")
 
 
-@app.task(name="main_autopay", queue="default", routing_key="task.main_autopay")
-def main_autopay():
+@app.task(name="auto_task_runner", queue="default", routing_key="task.auto_task_runner")
+def auto_task_runner():
     today_date = timezone.now().date()
 
     q_expression = Q(status=False) | Q(date__date__lte=today_date, status__isnull=True)
 
     schedules = (
-        Schedule.objects.annotate(
-            payment_amount=F("amount") - F("paid_amount")
-        )
-        .filter(q_expression)
+        Schedule.objects.filter(q_expression)
     )
-
-    logging.info(f"🔁 Found {schedules.count()} schedules to auto write-off.")
+    logging.info(f"🔁 Found {schedules.count()} schedules to auto run task.")
 
     for schedule in schedules:
         try:
-            print_hello.delay(schedule.id)
+            process_schedule.delay(schedule.id)
         except Exception as e:
-            logging.error(f"❌ Failed to dispatch print_hello for Schedule {schedule.id}: {e}")
+            logging.error(f"❌ Failed to dispatch process_schedule for Schedule {schedule.id}: {e}")

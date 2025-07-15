@@ -44,10 +44,7 @@ class TemporaryManager(models.Model):
 class Schedule(BaseModel):
     date = models.DateTimeField()
     status = models.BooleanField(null=True)
-    cause = models.TextField(null=True, blank=True)
-
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
-    paid_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    description = models.TextField(null=True, blank=True)
 
     class Meta:
         ordering = ("date",)
